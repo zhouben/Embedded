@@ -1,6 +1,8 @@
 //#include "stm32f4xx.h"
 //#include "stm32f4xx_hal_gpio.h"
 
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_cortex.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_rcc.h"
 #include "./led/bsp_led.h"
@@ -11,8 +13,8 @@ static void LED_GPIO_Config(void)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /*开启LED相关的GPIO外设时钟*/
-	__HAL_RCC_GPIOD_CLK_ENABLE();
-	__HAL_RCC_GPIOH_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOH_CLK_ENABLE();
     //RCC_AHB1PeriphClockCmd ( LED1_GPIO_CLK|LED2_GPIO_CLK|LED3_GPIO_CLK|LED4_GPIO_CLK, ENABLE); 
 
     /*选择要控制的GPIO引脚*/															   
@@ -50,11 +52,25 @@ static void LED_GPIO_Config(void)
 
     /*指示灯默认开启*/
     //LED4(ON);
-		HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
 }
+
+static int led4_state = 0;
+void SysTick_Handler(void)
+{
+    if(led4_state == 0)
+    {
+        HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
+        led4_state = 1;
+    }else{
+        led4_state = 0;
+        HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
+    }
+}
+
 
 static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
@@ -63,27 +79,39 @@ static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 #define DELAY_TIME 0x2FFFFF
 int main(void)
 {
-	LED_GPIO_Config();
-	while(1)
-	{
-		Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
-		Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
-		
-				Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
-		Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
-		
-				Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
-		Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
-		
-				Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
-		Delay( DELAY_TIME );
-		HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
-	}
+    LED_GPIO_Config();
+
+    /* Set Interrupt Group Priority */
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
+    /* Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) */
+    HAL_SYSTICK_Config(16000000);
+
+    /*Configure the SysTick IRQ priority */
+    HAL_NVIC_SetPriority(SysTick_IRQn, TICK_INT_PRIORITY ,0U);
+
+    HAL_NVIC_EnableIRQ(SysTick_IRQn);
+
+    while(1)
+    {
+        //		Delay( DELAY_TIME );
+        //		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
+        //		Delay( DELAY_TIME );
+        //		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
+
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
+
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
+
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
+        Delay( DELAY_TIME );
+        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
+    }
 }
