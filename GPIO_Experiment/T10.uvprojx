@@ -474,7 +474,7 @@
             <nStopA1X>0</nStopA1X>
             <nStopA2X>0</nStopA2X>
           </AfterMake>
-          <SelectedForBatchBuild>0</SelectedForBatchBuild>
+          <SelectedForBatchBuild>1</SelectedForBatchBuild>
           <SVCSIdString></SVCSIdString>
         </TargetCommonOption>
         <CommonProperty>
@@ -720,7 +720,7 @@
               <MiscControls></MiscControls>
               <Define>VECT_TAB_SRAM</Define>
               <Undefine></Undefine>
-              <IncludePath>./User;D:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.9.0\Drivers\STM32F4xx_HAL_Driver\Inc</IncludePath>
+              <IncludePath>./User</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
