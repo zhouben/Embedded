@@ -7,6 +7,13 @@
 #include "stm32f4xx_hal_rcc.h"
 #include "./led/bsp_led.h"
 
+#define DELAY_TIME_MIN  0x080000
+#define DELAY_TIME      0x200000
+#define DELAY_TIME_MAX  0x800000
+#define DELAY_TIME_STEP 0x080000
+
+static int32_t delay_time = DELAY_TIME;
+
 static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
 	for(; nCount != 0; nCount--);
@@ -18,7 +25,7 @@ static void LED_GPIO_Config(void)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /*开启LED相关的GPIO外设时钟*/
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOH_CLK_ENABLE();
     //RCC_AHB1PeriphClockCmd ( LED1_GPIO_CLK|LED2_GPIO_CLK|LED3_GPIO_CLK|LED4_GPIO_CLK, ENABLE);
@@ -119,8 +126,82 @@ HAL_StatusTypeDef MyHSE_SetSysClock()
 	return ret;
 }
 
+/*
+ * Press Key1 to increase the period of LED blink
+ */
+void EXTI0_IRQHandler()
+{
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+}
+
+/*
+ * Press Key2 to decrease the period of LED blink
+ */
+void EXTI15_10_IRQHandler()
+{
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == GPIO_PIN_0)
+	{
+        delay_time += DELAY_TIME_STEP;
+        if (delay_time > DELAY_TIME_MAX)
+        {
+            delay_time = DELAY_TIME_MAX;
+        }
+	}
+	else
+	{
+        delay_time -= DELAY_TIME_STEP;
+        if (delay_time < DELAY_TIME_MIN)
+        {
+            delay_time = DELAY_TIME_MIN;
+        }
+	}
+}
+
+static void Key_NVICConfigure()
+{
+	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
+	HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
+	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+static void Key_Configure()
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+	Key_NVICConfigure();
+	__HAL_RCC_GPIOA_CLK_ENABLE(); // for Key1, GPIOA, Pin0
+	__HAL_RCC_GPIOC_CLK_ENABLE(); // for Key2, GPIOC, Pin13
+	
+    /*选择要控制的GPIO引脚*/
+    GPIO_InitStructure.Pin = GPIO_PIN_0;
+
+    /*设置引脚模式为输出模式*/
+    GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+
+    /*设置引脚的输出类型为推挽输出*/
+    GPIO_InitStructure.Alternate = GPIO_MODE_AF_PP;
+
+    /*设置引脚为上拉模式*/
+    GPIO_InitStructure.Pull = GPIO_NOPULL;
+
+    /*设置引脚速率为2MHz */
+    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+
+    /*调用库函数，使用上面配置的GPIO_InitStructure初始化GPIO*/
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
+	GPIO_InitStructure.Pin = GPIO_PIN_13;
+	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+}
+
 static uint32_t freq = 0;
-#define DELAY_TIME 0x2FFFFF
 
 int main(void)
 {
@@ -133,28 +214,24 @@ int main(void)
         LED_GPIO_Config();
     }
 
+	Key_Configure();
     HAL_NVIC_EnableIRQ(SysTick_IRQn);
 
     while(1)
     {
-        //		Delay( DELAY_TIME );
-        //		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
-        //		Delay( DELAY_TIME );
-        //		HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
-
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
 
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
 
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
-        Delay( DELAY_TIME );
+        Delay( delay_time );
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
     }
 }
