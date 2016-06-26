@@ -22,19 +22,23 @@ static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 	for(; nCount != 0; nCount--);
 }
 
+static void PowerOn(void)
+{
+    /*开启LED相关的GPIO外设时钟*/
+	__HAL_RCC_GPIOA_CLK_ENABLE(); // for Key1, GPIOA, Pin0
+	__HAL_RCC_GPIOC_CLK_ENABLE(); // for Key2, GPIOC, Pin13
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOH_CLK_ENABLE();
+}
 static void LED_GPIO_Config(void)
 {
     /*定义一个GPIO_InitTypeDef类型的结构体*/
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    /*开启LED相关的GPIO外设时钟*/
-
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_GPIOH_CLK_ENABLE();
     //RCC_AHB1PeriphClockCmd ( LED1_GPIO_CLK|LED2_GPIO_CLK|LED3_GPIO_CLK|LED4_GPIO_CLK, ENABLE);
 
     /*选择要控制的GPIO引脚*/
-    GPIO_InitStructure.Pin = LED1_PIN;
+    GPIO_InitStructure.Pin = LED1_PIN | LED2_PIN | LED3_PIN;
 
     /*设置引脚模式为输出模式*/
     GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
@@ -49,15 +53,8 @@ static void LED_GPIO_Config(void)
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
 
     /*调用库函数，使用上面配置的GPIO_InitStructure初始化GPIO*/
-    HAL_GPIO_Init(LED1_GPIO_PORT, &GPIO_InitStructure);
+    HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
 
-    /*选择要控制的GPIO引脚*/
-    GPIO_InitStructure.Pin = LED2_PIN;
-    HAL_GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStructure);
-
-    /*选择要控制的GPIO引脚*/
-    GPIO_InitStructure.Pin = LED3_PIN;
-    HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStructure);
 
     /*选择要控制的GPIO引脚*/
     GPIO_InitStructure.Pin = LED4_PIN;
@@ -66,6 +63,10 @@ static void LED_GPIO_Config(void)
     GPIO_InitStructure.Pin = GPIO_PIN_3;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+    GPIO_InitStructure.Pin = GPIO_PIN_13;
+    GPIO_InitStructure.Pull = GPIO_NOPULL;
+    GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
     /*关闭RGB灯*/
     //LED_RGBOFF;
 
@@ -75,19 +76,13 @@ static void LED_GPIO_Config(void)
     HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
 
 static int led4_cnt = 0;
 void Blink_LED(void)
 {
     led4_cnt++;
-    if(led4_cnt & 1)
-    {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-    }else
-    {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-    }
     if(led4_cnt == 500)
     {
         HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
@@ -103,9 +98,19 @@ void Blink_LED(void)
  * interrupt handle for systick
  * default interrupt interval is 1ms, which is set in HAL_RCC_ClockConfig
  */
+static int led1_cnt = 0;
 void SysTick_Handler(void)
 {
-
+    led1_cnt++;
+    if (led1_cnt == 500)
+    {
+        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
+    }
+    else if (led1_cnt == 1000)
+    {
+        led1_cnt = 0;
+        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
+    }
 }
 
 HAL_StatusTypeDef MyHSE_SetSysClock()
@@ -193,15 +198,14 @@ static void MyNVICConfigure()
 	
 	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 1, 2);
 	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+
+	HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 static void Key_Configure()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	MyNVICConfigure();
-	__HAL_RCC_GPIOA_CLK_ENABLE(); // for Key1, GPIOA, Pin0
-	__HAL_RCC_GPIOC_CLK_ENABLE(); // for Key2, GPIOC, Pin13
-	
+
     /*选择要控制的GPIO引脚*/
     GPIO_InitStructure.Pin = GPIO_PIN_0;
 
@@ -211,7 +215,6 @@ static void Key_Configure()
     /*设置引脚的输出类型为推挽输出*/
     GPIO_InitStructure.Alternate = GPIO_MODE_AF_PP;
 
-    /*设置引脚为上拉模式*/
     GPIO_InitStructure.Pull = GPIO_NOPULL;
 
     /*设置引脚速率为2MHz */
@@ -223,7 +226,7 @@ static void Key_Configure()
 	/* 此处自动将 GPIO13 设置为上升沿触发中断，芯片自动映射到 EVTI10~15 号中断 */
 	GPIO_InitStructure.Pin = GPIO_PIN_13;
 	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+	//HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 #define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
                                         __IO uint32_t tmpreg = 0x00U; \
@@ -259,23 +262,21 @@ int main(void)
     MyHSE_SetSysClock();
 
     freq = HAL_RCC_GetSysClockFreq();
+    PowerOn();
 
-    if(freq != 0)
-    {
-        LED_GPIO_Config();
-    }
-
+	LED_GPIO_Config();
 	Key_Configure();
 	MyTimer_Configure();
-    HAL_NVIC_EnableIRQ(SysTick_IRQn);
+	
+	MyNVICConfigure();
 
     while(1)
     {
         Delay( delay_time );
-        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
         Delay( delay_time );
-        HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
-
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+#if 0
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
         Delay( delay_time );
@@ -285,5 +286,6 @@ int main(void)
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
         Delay( delay_time );
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
+#endif
     }
 }
