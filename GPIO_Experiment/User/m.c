@@ -12,7 +12,10 @@
 #define DELAY_TIME_MAX  0x800000
 #define DELAY_TIME_STEP 0x080000
 
+#define TIM6_PERIOD     0x0A
+
 static int32_t delay_time = DELAY_TIME;
+static TIM_HandleTypeDef htim;
 
 static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
@@ -75,12 +78,7 @@ static void LED_GPIO_Config(void)
 }
 
 static int led4_cnt = 0;
-
-/*
- * interrupt handle for systick
- * default interrupt interval is 1ms, which is set in HAL_RCC_ClockConfig
- */
-void SysTick_Handler(void)
+void Blink_LED(void)
 {
     led4_cnt++;
     if(led4_cnt & 1)
@@ -99,6 +97,15 @@ void SysTick_Handler(void)
         led4_cnt = 0;
         HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
     }
+}
+
+/*
+ * interrupt handle for systick
+ * default interrupt interval is 1ms, which is set in HAL_RCC_ClockConfig
+ */
+void SysTick_Handler(void)
+{
+
 }
 
 HAL_StatusTypeDef MyHSE_SetSysClock()
@@ -162,19 +169,36 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
-static void Key_NVICConfigure()
+void TIM6_DAC_IRQHandler()
+{
+	HAL_TIM_IRQHandler(&htim);
+}
+
+/* is called by TIM6_DAC_IRQHandler */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	Blink_LED();
+}
+
+/*
+ * Set NVIC for Key1, Key2 and TIM6
+ */
+static void MyNVICConfigure()
 {
 	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
 	HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
 	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	
+	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 1, 2);
+	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 }
 
 static void Key_Configure()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	Key_NVICConfigure();
+	MyNVICConfigure();
 	__HAL_RCC_GPIOA_CLK_ENABLE(); // for Key1, GPIOA, Pin0
 	__HAL_RCC_GPIOC_CLK_ENABLE(); // for Key2, GPIOC, Pin13
 	
@@ -196,9 +220,36 @@ static void Key_Configure()
     /*调用库函数，使用上面配置的GPIO_InitStructure初始化GPIO*/
     HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
+	/* 此处自动将 GPIO13 设置为上升沿触发中断，芯片自动映射到 EVTI10~15 号中断 */
 	GPIO_InitStructure.Pin = GPIO_PIN_13;
 	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+}
+#define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
+                                        /* Delay after an RCC peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
+                                        UNUSED(tmpreg); \
+                                          } while(0)
+/*
+ * Configure TIM6 as basic timer
+ * period is 1ms
+ * Once it expires, TIM6_DAC_IRQHandler will be called when TIM6_DAC_IRQn is enabled.
+ */
+static void MyTimer_Configure()
+{
+    __HAL_RCC_TIM6_CLK_ENABLE();
+
+	htim.Instance = TIM6;
+	htim.State = HAL_TIM_STATE_RESET;
+	htim.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim.Init.Period = TIM6_PERIOD;
+	htim.Init.Prescaler = 9000;
+
+	HAL_TIM_Base_Init(&htim);
+	HAL_TIM_Base_Start_IT(&htim);
 }
 
 static uint32_t freq = 0;
@@ -215,6 +266,7 @@ int main(void)
     }
 
 	Key_Configure();
+	MyTimer_Configure();
     HAL_NVIC_EnableIRQ(SysTick_IRQn);
 
     while(1)
