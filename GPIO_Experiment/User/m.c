@@ -30,53 +30,59 @@ static void PowerOn(void)
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOH_CLK_ENABLE();
 }
-static void LED_GPIO_Config(void)
+static void MyGPIO_Configure(void)
 {
     /*定义一个GPIO_InitTypeDef类型的结构体*/
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    //RCC_AHB1PeriphClockCmd ( LED1_GPIO_CLK|LED2_GPIO_CLK|LED3_GPIO_CLK|LED4_GPIO_CLK, ENABLE);
-
     /*选择要控制的GPIO引脚*/
     GPIO_InitStructure.Pin = LED1_PIN | LED2_PIN | LED3_PIN;
-
     /*设置引脚模式为输出模式*/
     GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-
     /*设置引脚的输出类型为推挽输出*/
     GPIO_InitStructure.Alternate = GPIO_MODE_AF_PP;
-
     /*设置引脚为上拉模式*/
     GPIO_InitStructure.Pull = GPIO_PULLUP;
-
     /*设置引脚速率为2MHz */
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
-
     /*调用库函数，使用上面配置的GPIO_InitStructure初始化GPIO*/
     HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
 
-
     /*选择要控制的GPIO引脚*/
     GPIO_InitStructure.Pin = LED4_PIN;
-    HAL_GPIO_Init(LED4_GPIO_PORT, &GPIO_InitStructure);
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    GPIO_InitStructure.Pin = GPIO_PIN_3;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_InitStructure.Pin = GPIO_PIN_13;
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
-    GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
-    /*关闭RGB灯*/
-    //LED_RGBOFF;
-
-    /*指示灯默认开启*/
-    //LED4(ON);
     HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_SET);
+
+    /*
+     * GPIOA: Pin0 (input)  -> Key1
+     *        Pin3 (output) -> to control peripheral
+     */
+    GPIO_InitStructure.Pin = GPIO_PIN_3;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+
+    GPIO_InitStructure.Pin = GPIO_PIN_0;
+    GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+    GPIO_InitStructure.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    /*
+     * GPIOB: Pin13 (input)  -> rise interrupt EVTI13
+     * connect PA3 to PB13 to let PA3 (in main loop) control PB13 to rise interrupt
+     */
+    GPIO_InitStructure.Pin = GPIO_PIN_13;
+	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING_FALLING; // GPIO_MODE_IT_RISING;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    /*
+     * GPIOC: Pin13 (input)  -> for Key2 to riase interrupt for EVTI13
+     */
+    GPIO_InitStructure.Pin = GPIO_PIN_13;
+    //HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 static int led4_cnt = 0;
@@ -191,8 +197,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 static void MyNVICConfigure()
 {
 	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
+
 	HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
 	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 	
@@ -202,32 +210,6 @@ static void MyNVICConfigure()
 	HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
 
-static void Key_Configure()
-{
-	GPIO_InitTypeDef GPIO_InitStructure;
-
-    /*选择要控制的GPIO引脚*/
-    GPIO_InitStructure.Pin = GPIO_PIN_0;
-
-    /*设置引脚模式为输出模式*/
-    GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-
-    /*设置引脚的输出类型为推挽输出*/
-    GPIO_InitStructure.Alternate = GPIO_MODE_AF_PP;
-
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
-
-    /*设置引脚速率为2MHz */
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
-
-    /*调用库函数，使用上面配置的GPIO_InitStructure初始化GPIO*/
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-	
-	/* 此处自动将 GPIO13 设置为上升沿触发中断，芯片自动映射到 EVTI10~15 号中断 */
-	GPIO_InitStructure.Pin = GPIO_PIN_13;
-	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-	//HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-}
 #define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
                                         __IO uint32_t tmpreg = 0x00U; \
                                         SET_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
@@ -264,8 +246,7 @@ int main(void)
     freq = HAL_RCC_GetSysClockFreq();
     PowerOn();
 
-	LED_GPIO_Config();
-	Key_Configure();
+	MyGPIO_Configure();
 	MyTimer_Configure();
 	
 	MyNVICConfigure();
