@@ -8,15 +8,24 @@
 #include "./led/bsp_led.h"
 
 #define DELAY_TIME_MIN  0x080000
-#define DELAY_TIME      0x200000
+#define DELAY_TIME      0x200000	// about 150ms
 #define DELAY_TIME_MAX  0x800000
 #define DELAY_TIME_STEP 0x080000
 
-#define TIM6_PERIOD     0x0A
+#define TIM6_PERIOD     0x09
+
+#define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
+                                        /* Delay after an RCC peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
+                                        UNUSED(tmpreg); \
+                                          } while(0)
 
 static int32_t delay_time = DELAY_TIME;
-static TIM_HandleTypeDef htim;
+static TIM_HandleTypeDef gHtim;
 
+/* for nCount = 0x20_0000, delay time is around 150ms */
 static void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
 	for(; nCount != 0; nCount--);
@@ -29,6 +38,9 @@ static void PowerOn(void)
 	__HAL_RCC_GPIOC_CLK_ENABLE(); // for Key2, GPIOC, Pin13
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOH_CLK_ENABLE();
+
+    __HAL_RCC_TIM6_CLK_ENABLE();
+	__HAL_RCC_TIM8_CLK_ENABLE();
 }
 static void MyGPIO_Configure(void)
 {
@@ -83,6 +95,18 @@ static void MyGPIO_Configure(void)
      */
     GPIO_InitStructure.Pin = GPIO_PIN_13;
     //HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+	
+	GPIO_InitStructure.Pin = GPIO_PIN_6;
+    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+    GPIO_InitStructure.Pin = GPIO_PIN_5;
+    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
+	
 }
 
 static int led4_cnt = 0;
@@ -182,13 +206,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void TIM6_DAC_IRQHandler()
 {
-	HAL_TIM_IRQHandler(&htim);
+	HAL_TIM_IRQHandler(&gHtim);
 }
 
 /* is called by TIM6_DAC_IRQHandler */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	Blink_LED();
+	//Blink_LED();
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 }
 
 /*
@@ -210,13 +235,6 @@ static void MyNVICConfigure()
 	HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
 
-#define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
-                                        __IO uint32_t tmpreg = 0x00U; \
-                                        SET_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
-                                        /* Delay after an RCC peripheral clock enabling */ \
-                                        tmpreg = READ_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
-                                        UNUSED(tmpreg); \
-                                          } while(0)
 /*
  * Configure TIM6 as basic timer
  * period is 1ms
@@ -224,17 +242,40 @@ static void MyNVICConfigure()
  */
 static void MyTimer_Configure()
 {
-    __HAL_RCC_TIM6_CLK_ENABLE();
+	gHtim.Instance = TIM6;
+	gHtim.State = HAL_TIM_STATE_RESET;
+	gHtim.Init.CounterMode = TIM_COUNTERMODE_UP;
+	gHtim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	gHtim.Init.Period = TIM6_PERIOD;
+	gHtim.Init.Prescaler = 9000;
 
-	htim.Instance = TIM6;
+	HAL_TIM_Base_Init(&gHtim);
+	HAL_TIM_Base_Start_IT(&gHtim);
+	
+#if 1
+	TIM_OC_InitTypeDef oc_init;
+    TIM_HandleTypeDef htim;
+
 	htim.State = HAL_TIM_STATE_RESET;
+	htim.Instance = TIM8;
 	htim.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim.Init.Period = TIM6_PERIOD;
-	htim.Init.Prescaler = 9000;
-
-	HAL_TIM_Base_Init(&htim);
-	HAL_TIM_Base_Start_IT(&htim);
+	htim.Init.Period = 1024 - 1;
+	htim.Init.Prescaler = 1800 - 1;
+	htim.Init.RepetitionCounter = 0;
+	HAL_TIM_OC_Init(&htim);
+	
+	oc_init.OCMode = TIM_OCMODE_PWM1;
+	oc_init.OCPolarity = TIM_OCPOLARITY_HIGH;
+	oc_init.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+	oc_init.OCIdleState = TIM_OCIDLESTATE_SET;
+	oc_init.OCNIdleState = TIM_OCNIDLESTATE_SET;
+	oc_init.Pulse = 127;
+	HAL_TIM_OC_ConfigChannel(&htim, &oc_init, TIM_CHANNEL_1);
+	//TIM_OC1_SetConfig(TIM8, &oc_init);
+	HAL_TIM_OC_Start(&htim, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start_IT(&htim, 
+#endif
 }
 
 static uint32_t freq = 0;
