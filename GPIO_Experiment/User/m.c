@@ -81,7 +81,14 @@ static void MyGPIO_Configure(void)
     GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStructure.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
+	
+	/* for OC (PWM) output BKIN */
+    GPIO_InitStructure.Pin = GPIO_PIN_6;
+    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.Pull = GPIO_NOPULL;
+	GPIO_InitStructure.Alternate = GPIO_AF3_TIM8;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
     /*
      * GPIOB: Pin13 (input)  -> rise interrupt EVTI13
      * connect PA3 to PB13 to let PA3 (in main loop) control PB13 to rise interrupt
@@ -99,11 +106,13 @@ static void MyGPIO_Configure(void)
 	GPIO_InitStructure.Pin = GPIO_PIN_6;
     GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStructure.Alternate = GPIO_AF3_TIM8;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     GPIO_InitStructure.Pin = GPIO_PIN_5;
     GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStructure.Alternate = GPIO_AF3_TIM8;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
 	
@@ -247,12 +256,11 @@ static void MyTimer_Configure()
 	gHtim.Init.CounterMode = TIM_COUNTERMODE_UP;
 	gHtim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	gHtim.Init.Period = TIM6_PERIOD;
-	gHtim.Init.Prescaler = 9000;
+	gHtim.Init.Prescaler = 9000 - 1;
 
 	HAL_TIM_Base_Init(&gHtim);
-	HAL_TIM_Base_Start_IT(&gHtim);
+	//HAL_TIM_Base_Start_IT(&gHtim);
 	
-#if 1
 	TIM_OC_InitTypeDef oc_init;
     TIM_HandleTypeDef htim;
 
@@ -267,15 +275,17 @@ static void MyTimer_Configure()
 	
 	oc_init.OCMode = TIM_OCMODE_PWM1;
 	oc_init.OCPolarity = TIM_OCPOLARITY_HIGH;
-	oc_init.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+	oc_init.OCNPolarity = TIM_OCNPOLARITY_LOW; //TIM_OCNPOLARITY_HIGH;
 	oc_init.OCIdleState = TIM_OCIDLESTATE_SET;
 	oc_init.OCNIdleState = TIM_OCNIDLESTATE_SET;
-	oc_init.Pulse = 127;
-	HAL_TIM_OC_ConfigChannel(&htim, &oc_init, TIM_CHANNEL_1);
+	oc_init.Pulse = 372;
+	//oc_init.OCFastMode = TIM_CCMR1_OC1PE; // TIM_OCFAST_ENABLE;
+	HAL_TIM_PWM_ConfigChannel(&htim, &oc_init, TIM_CHANNEL_1);
 	//TIM_OC1_SetConfig(TIM8, &oc_init);
 	HAL_TIM_OC_Start(&htim, TIM_CHANNEL_1);
 	//HAL_TIM_PWM_Start_IT(&htim, 
-#endif
+
+    HAL_TIM_Base_Start_IT(&gHtim);
 }
 
 static uint32_t freq = 0;
@@ -295,9 +305,9 @@ int main(void)
     while(1)
     {
         Delay( delay_time );
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+        //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
         Delay( delay_time );
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+        //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 #if 0
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
