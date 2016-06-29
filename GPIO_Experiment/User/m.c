@@ -109,7 +109,7 @@ static void MyGPIO_Configure(void)
 	GPIO_InitStructure.Alternate = GPIO_AF3_TIM8;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-    GPIO_InitStructure.Pin = GPIO_PIN_5;
+    GPIO_InitStructure.Pin = GPIO_PIN_5 | GPIO_PIN_7;
     GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
 	GPIO_InitStructure.Alternate = GPIO_AF3_TIM8;
@@ -269,21 +269,21 @@ static void MyTimer_Configure()
 	htim.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim.Init.Period = 1024 - 1;
-	htim.Init.Prescaler = 1800 - 1;
+	htim.Init.Prescaler = 180 - 1;
 	htim.Init.RepetitionCounter = 0;
 	HAL_TIM_OC_Init(&htim);
 	
-	oc_init.OCMode = TIM_OCMODE_PWM1;
+	oc_init.OCMode = TIM_OCMODE_PWM1; // ; TIM_OCMODE_ACTIVE error!
 	oc_init.OCPolarity = TIM_OCPOLARITY_HIGH;
-	oc_init.OCNPolarity = TIM_OCNPOLARITY_LOW; //TIM_OCNPOLARITY_HIGH;
+	oc_init.OCNPolarity = TIM_OCNPOLARITY_HIGH; //TIM_OCNPOLARITY_HIGH;
 	oc_init.OCIdleState = TIM_OCIDLESTATE_SET;
-	oc_init.OCNIdleState = TIM_OCNIDLESTATE_SET;
-	oc_init.Pulse = 372;
+	oc_init.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+	oc_init.Pulse = 256; // 2.56ms
 	//oc_init.OCFastMode = TIM_CCMR1_OC1PE; // TIM_OCFAST_ENABLE;
+	//HAL_TIM_OC_ConfigChannel(&htim, &oc_init, TIM_CHANNEL_1);
+	//HAL_TIM_OC_Start(&htim, TIM_CHANNEL_1);
 	HAL_TIM_PWM_ConfigChannel(&htim, &oc_init, TIM_CHANNEL_1);
-	//TIM_OC1_SetConfig(TIM8, &oc_init);
-	HAL_TIM_OC_Start(&htim, TIM_CHANNEL_1);
-	//HAL_TIM_PWM_Start_IT(&htim, 
+	HAL_TIM_PWM_Start(&htim, TIM_CHANNEL_1);
 
     HAL_TIM_Base_Start_IT(&gHtim);
 }
