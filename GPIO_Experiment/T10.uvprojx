@@ -382,6 +382,26 @@
               <FileType>1</FileType>
               <FilePath>.\User\m.c</FilePath>
             </File>
+            <File>
+              <FileName>clock_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\clock_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_interrupt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\key_interrupt.c</FilePath>
+            </File>
+            <File>
+              <FileName>led_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\led_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>tim_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\tim_config.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -768,6 +788,26 @@
               <FileType>1</FileType>
               <FilePath>.\User\m.c</FilePath>
             </File>
+            <File>
+              <FileName>clock_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\clock_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_interrupt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\key_interrupt.c</FilePath>
+            </File>
+            <File>
+              <FileName>led_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\led_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>tim_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\tim_config.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -848,6 +888,13 @@
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="TIM" Cvendor="Keil" Cversion="1.5.0" condition="STM32F4 HAL DMA">
+        <package name="STM32F4xx_DFP" schemaVersion="1.3" url="http://www.keil.com/pack" vendor="Keil" version="2.9.0"/>
+        <targetInfos>
+          <targetInfo name="Flash_Boot"/>
+          <targetInfo name="SRAM_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="UART" Cvendor="Keil" Cversion="1.5.0" condition="STM32F4 HAL DMA">
         <package name="STM32F4xx_DFP" schemaVersion="1.3" url="http://www.keil.com/pack" vendor="Keil" version="2.9.0"/>
         <targetInfos>
           <targetInfo name="Flash_Boot"/>
