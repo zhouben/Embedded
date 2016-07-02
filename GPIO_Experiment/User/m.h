@@ -9,3 +9,4 @@ int Tim_GetTim6Cnt(void);
 int Tim_GetTim2Cnt(void);
 int Tim_GetTim3Cnt(void);
 void MyTimer_Configure(void);
+int MyUsart_SendDataSync(uint8_t *data, int siz);

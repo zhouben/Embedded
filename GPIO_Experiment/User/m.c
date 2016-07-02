@@ -12,7 +12,6 @@
 
 static int32_t delay_time = DELAY_TIME;
 static UART_HandleTypeDef ghuart;
-static int usart_tx_flag = 0; // 0: tx completed, 1: has tx (not completed)
 
 /* for nCount = 0x20_0000, delay time is around 150ms */
 inline void Delay(__IO uint32_t nCount)	 //简单的延时函数
@@ -62,41 +61,38 @@ void MyNVICConfigure(void)
 	HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
 
-//static uint32_t freq = 0;
 
 int main(void)
 {
     int i;
     uint32_t data[10];
-	//char data[] = "hello world!";
+    uint32_t freq = 0;
+    //int usart_tx_flag = 0; // 0: tx completed, 1: has tx (not completed)
+	char str[] = "hello world!";
     MyHSE_SetSysClock();
 
-    //freq = HAL_RCC_GetSysClockFreq();
+    freq = HAL_RCC_GetSysClockFreq();
+    assert_param(freq > 0);
     //PowerOn();
 
 	MyLed_Configure();
 	MyTimer_Configure();
     MyKey_Config();
-	//MyUart_Configure();
+	MyUart_Configure();
 	
 	MyNVICConfigure();
 
     i = 0;
     while(1)
     {
-        Delay( delay_time );
+        Delay( delay_time *2 );
         if (i < 10)
         {
             data[i] = HAL_GetTick();
 			i++;
         }
+		MyUsart_SendDataSync(str, 12);
 #if 0
-				if (usart_tx_flag == 0)
-		{
-			usart_tx_flag = 1;
-			//HAL_UART_Transmit_IT(&ghuart, (uint8_t *)data, sizeof(data));
-			//HAL_UART_Transmit(&ghuart, (uint8_t *)data, sizeof(data), 5);
-		}
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
         Delay( delay_time );
