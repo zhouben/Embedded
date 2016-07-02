@@ -16,6 +16,7 @@ static int tim3_cnt[10] = {0};
 
 void SysTick_Handler(void)
 {
+    HAL_IncTick();
     if (cnt < 10)
     {
         tim6_cnt[cnt] = Tim_GetTim6Cnt();

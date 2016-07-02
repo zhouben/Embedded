@@ -30,8 +30,7 @@ void TIM6_DAC_IRQHandler()
 /* is called by TIM6_DAC_IRQHandler */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	//Blink_LED();
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+	// do something.
 }
 
 #if 0
@@ -225,5 +224,5 @@ void MyTimer_Configure(void)
 
     HAL_TIM_PWM_Start(&ghTim3,  TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&ghTim2, TIM_CHANNEL_1);
-    HAL_TIM_Base_Start(&ghTim6);
+    HAL_TIM_Base_Start_IT(&ghTim6);
 }
