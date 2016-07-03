@@ -34,6 +34,7 @@ void SysTick_Handler(void)
         led1_cnt = 0;
         Led4_Blink();
     }
+    MyDac_Update();
 }
 
 HAL_StatusTypeDef MyHSE_SetSysClock()

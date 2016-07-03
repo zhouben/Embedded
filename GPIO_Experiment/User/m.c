@@ -79,7 +79,7 @@ int main(void)
 	MyTimer_Configure();
     MyKey_Config();
 	MyUart_Configure();
-	
+	MyDAC_Config();
 	MyNVICConfigure();
 
     i = 0;
