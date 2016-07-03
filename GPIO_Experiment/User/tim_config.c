@@ -2,9 +2,11 @@
 #include "stm32f4xx_hal_cortex.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_rcc.h"
+#include "stm32f4xx_hal_rcc_ex.h"
 #include "m.h"
 
 #define TIM6_PERIOD     0x09
+#if 0
 #define __HAL_RCC_TIM6_CLK_ENABLE()     do { \
                                         __IO uint32_t tmpreg = 0x00U; \
                                         SET_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
@@ -12,6 +14,7 @@
                                         tmpreg = READ_BIT(RCC->APB1ENR, RCC_APB1ENR_TIM6EN);\
                                         UNUSED(tmpreg); \
                                           } while(0)
+#endif
 /*
  * TIM8: GPIO_C_6
  *
@@ -22,10 +25,7 @@ static TIM_HandleTypeDef ghTim2;
 static TIM_HandleTypeDef ghTim3;
 static TIM_HandleTypeDef ghTim8;
 
-void TIM6_DAC_IRQHandler()
-{
-	HAL_TIM_IRQHandler(&ghTim6);
-}
+
 
 /* is called by TIM6_DAC_IRQHandler */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -111,7 +111,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
     default:
         break;
     }
-	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 1, 2);
+	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 1, 3);
 	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 }
 
@@ -137,6 +137,7 @@ int Tim_GetTim3Cnt(void)
  */
 void MyTimer_Configure(void)
 {
+  TIM_MasterConfigTypeDef sMasterConfig;
     // configure TIM6 as basic timer.
     // Input clock freq: 90MHz
     // CLK_CNT (after prescaler): 10KHz
@@ -144,10 +145,18 @@ void MyTimer_Configure(void)
 	ghTim6.State = HAL_TIM_STATE_RESET;
 	ghTim6.Init.CounterMode = TIM_COUNTERMODE_UP;
 	ghTim6.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	ghTim6.Init.Period = 0xFFFF;
+	ghTim6.Init.Period = 100;
 	ghTim6.Init.Prescaler = 9000 - 1;
-	HAL_TIM_Base_Init(&ghTim6);
-	
+    HAL_TIM_Base_Init(&ghTim6);
+
+    /* TIM6 TRGO selection */
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+
+    HAL_TIMEx_MasterConfigSynchronization(&ghTim6, &sMasterConfig);
+
+    HAL_TIM_Base_Start(&ghTim6);
+
     // configure TIM8 as PWM output
 	TIM_OC_InitTypeDef oc_init;
 	ghTim8.State = HAL_TIM_STATE_RESET;
@@ -174,7 +183,7 @@ void MyTimer_Configure(void)
     // configure TIM2
     // Input clock freq: 90MHz
     // CLK_CNT (after prescaler): 90MHz / 9 = 10MHz
-    TIM_MasterConfigTypeDef sMasterConfig;
+    //TIM_MasterConfigTypeDef sMasterConfig;
     TIM_OC_InitTypeDef sOCConfig;
     TIM_SlaveConfigTypeDef sSlaveConfig;
 
@@ -224,5 +233,4 @@ void MyTimer_Configure(void)
 
     HAL_TIM_PWM_Start(&ghTim3,  TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&ghTim2, TIM_CHANNEL_1);
-    HAL_TIM_Base_Start_IT(&ghTim6);
 }

@@ -56,7 +56,6 @@ void MyNVICConfigure(void)
 
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-	
 
 	HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
@@ -68,7 +67,8 @@ int main(void)
     uint32_t data[10];
     uint32_t freq = 0;
     //int usart_tx_flag = 0; // 0: tx completed, 1: has tx (not completed)
-	char str[] = "hello world!";
+	//char str[] = "hello world!";
+	char str[] = "hhhhhhhhhhhh";
     MyHSE_SetSysClock();
 
     freq = HAL_RCC_GetSysClockFreq();
@@ -79,9 +79,9 @@ int main(void)
 	MyTimer_Configure();
     MyKey_Config();
 	MyUart_Configure();
-	MyDAC_Config();
+	
 	MyNVICConfigure();
-
+	MyDAC_Config(1);
     i = 0;
     while(1)
     {
@@ -91,7 +91,7 @@ int main(void)
             data[i] = HAL_GetTick();
 			i++;
         }
-		MyUsart_SendDataSync(str, 12);
+		MyUsart_SendDataSync(str, 3);
 #if 0
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
