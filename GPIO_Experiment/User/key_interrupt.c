@@ -4,8 +4,6 @@
 #include "stm32f4xx_hal_rcc.h"
 #include "m.h"
 
-static int gpioh_pin_3 = 0;
-uint32_t echo_from_ultrasonic[ 2 ] = {0};
 /*
  * Press Key1 to increase the period of LED blink
  */
@@ -19,11 +17,7 @@ void EXTI0_IRQHandler()
  */
 void EXTI3_IRQHandler()
 {
-	if(gpioh_pin_3 < 2)
-    {
-        echo_from_ultrasonic[gpioh_pin_3] = Tim_GetTim2Cnt();
-    }
-	gpioh_pin_3++;
+    MyUltraSonic_Handle(ULTRASONIC_REQ_ECHO_EVENT);
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
 }
 

@@ -25,6 +25,8 @@ void SysTick_Handler(void)
     else if (led1_cnt == 1000)
     {
         led1_cnt = 0;
+        MyUltraSonic_Handle(ULTRASONIC_REQ_RANGING_START);
+
         Led4_Blink();
         if (cnt < 10)
         {

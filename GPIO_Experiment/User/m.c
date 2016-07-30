@@ -13,39 +13,16 @@
 static int32_t delay_time = DELAY_TIME;
 static UART_HandleTypeDef ghuart;
 
-/* for nCount = 0x20_0000, delay time is around 150ms */
+/*
+ * for nCount = 0x20_0000, delay time is around 150ms
+ */
 void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
 	for(; nCount != 0; nCount--);
 }
 
-#if 0
-static void MyCommonGPIO_Config(void)
-{
-
-    // Key1: GPIOA Pin0
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.Pin = GPIO_PIN_3;
-    GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStructure.Alternate = 0;
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
-    /*
-     * GPIOA: Pin0 (input)  -> Key1
-     *        Pin3 (output) -> to control peripheral
-     */
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-}
-
-static void PowerOn(void)
-{
-
-}
-#endif
-
 /*
- * Set NVIC for Key1, Key2 and TIM6
+ * Set NVIC for Key1(EXTI0), Key2(EXTI15_10) and GPIOH_3(EXTI3)
  */
 void MyNVICConfigure(void)
 {
@@ -76,7 +53,6 @@ int main(void)
 
     freq = HAL_RCC_GetSysClockFreq();
     assert_param(freq > 0);
-    //PowerOn();
 
 	MyLed_Configure();
 	MyTimer_Configure();
@@ -85,24 +61,17 @@ int main(void)
 	
 	MyNVICConfigure();
 	//MyDAC_Config(1);
-    MyUltrasonic_Config();
+    MyUltraSonic_Config();
     i = 0;
     while(1)
     {
-        Delay( delay_time *2 );
+        Delay(delay_time);
         if (i < 10)
         {
             data[i] = HAL_GetTick();
             i++;
         }
-        if (i == 5)
-        {
-            HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_SET);
-            Delay( 100 );
-            HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_RESET);
-
-            i = 10;
-        }
+        MyUltraSonic_Handle(ULTRASONIC_REQ_RANGING_PROCESSING);
         MyUsart_SendDataSync(str, 3);
 #if 0
         Delay( delay_time );

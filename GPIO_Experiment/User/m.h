@@ -1,5 +1,12 @@
 #include "stm32f4xx_hal.h"
 
+typedef enum ULTRASONIC_REQ_TYPE_
+{
+    ULTRASONIC_REQ_RANGING_START,
+    ULTRASONIC_REQ_RANGING_PROCESSING,
+    ULTRASONIC_REQ_ECHO_EVENT,
+}ULTRASONIC_REQ_TYPE;
+
 void Led4_Blink(void);
 void MyKey_Config(void);
 void MyLed_Configure(void);
@@ -13,4 +20,5 @@ int MyUsart_SendDataSync(uint8_t *data, int siz);
 void MyDac_Update(void);
 void MyDAC_Config(uint32_t dma_mode);
 void MyUart_Configure(void);
-void MyUltrasonic_Config(void);
+void MyUltraSonic_Config(void);
+void MyUltraSonic_Handle(ULTRASONIC_REQ_TYPE request);
