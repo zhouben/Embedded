@@ -14,7 +14,7 @@ static int32_t delay_time = DELAY_TIME;
 static UART_HandleTypeDef ghuart;
 
 /* for nCount = 0x20_0000, delay time is around 150ms */
-inline void Delay(__IO uint32_t nCount)	 //简单的延时函数
+void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
 	for(; nCount != 0; nCount--);
 }
@@ -54,6 +54,9 @@ void MyNVICConfigure(void)
 	HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
 	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
+	HAL_NVIC_SetPriority(EXTI3_IRQn, 1, 2);
+	HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -81,7 +84,8 @@ int main(void)
 	MyUart_Configure();
 	
 	MyNVICConfigure();
-	MyDAC_Config(1);
+	//MyDAC_Config(1);
+    MyUltrasonic_Config();
     i = 0;
     while(1)
     {
@@ -89,9 +93,17 @@ int main(void)
         if (i < 10)
         {
             data[i] = HAL_GetTick();
-			i++;
+            i++;
         }
-		MyUsart_SendDataSync(str, 3);
+        if (i == 5)
+        {
+            HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_SET);
+            Delay( 100 );
+            HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_RESET);
+
+            i = 10;
+        }
+        MyUsart_SendDataSync(str, 3);
 #if 0
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);

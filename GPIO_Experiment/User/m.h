@@ -12,3 +12,5 @@ void MyTimer_Configure(void);
 int MyUsart_SendDataSync(uint8_t *data, int siz);
 void MyDac_Update(void);
 void MyDAC_Config(uint32_t dma_mode);
+void MyUart_Configure(void);
+void MyUltrasonic_Config(void);
