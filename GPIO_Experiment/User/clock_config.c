@@ -10,20 +10,13 @@
  */
 static int led1_cnt = 0;
 static int cnt = 0;
-static int tim6_cnt[10] = {0};
-static int tim2_cnt[10] = {0};
-static int tim3_cnt[10] = {0};
+int tim6_cnt[10] = {0};
+int tim2_cnt[10] = {0};
+int tim3_cnt[10] = {0};
 
 void SysTick_Handler(void)
 {
     HAL_IncTick();
-    if (cnt < 10)
-    {
-        tim6_cnt[cnt] = Tim_GetTim6Cnt();
-        tim2_cnt[cnt] = Tim_GetTim2Cnt();
-        tim3_cnt[cnt] = Tim_GetTim3Cnt();
-		cnt++;
-    }
     led1_cnt++;
     if (led1_cnt == 500)
     {
@@ -33,7 +26,15 @@ void SysTick_Handler(void)
     {
         led1_cnt = 0;
         Led4_Blink();
+        if (cnt < 10)
+        {
+            tim6_cnt[cnt] = Tim_GetTim6Cnt();
+            tim2_cnt[cnt] = Tim_GetTim2Cnt();
+            tim3_cnt[cnt] = Tim_GetTim3Cnt();
+            cnt++;
+        }
     }
+    // manually set DAC value
     //MyDac_Update();
 }
 
