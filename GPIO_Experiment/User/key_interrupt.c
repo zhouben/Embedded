@@ -4,8 +4,19 @@
 #include "stm32f4xx_hal_rcc.h"
 #include "m.h"
 
-static int gpioh_pin_3 = 0;
-uint32_t echo_from_ultrasonic[ 2 ] = {0};
+#define INTR_EXPR_MAX_NUM 2
+uint32_t curr_index;
+uint32_t pre_intr_time[2] = {0};
+uint32_t post_intr_time[2] = {0};
+void Intr_SetPreIntrTime(uint32_t index)
+{
+    if (index < INTR_EXPR_MAX_NUM)
+    {
+        pre_intr_time[ index ] = Tim_GetTim2Cnt();
+        curr_index = index;
+    }
+
+}
 /*
  * Press Key1 to increase the period of LED blink
  */
@@ -19,11 +30,7 @@ void EXTI0_IRQHandler()
  */
 void EXTI3_IRQHandler()
 {
-	if(gpioh_pin_3 < 2)
-    {
-        echo_from_ultrasonic[gpioh_pin_3] = Tim_GetTim2Cnt();
-    }
-	gpioh_pin_3++;
+    post_intr_time[curr_index] = Tim_GetTim2Cnt();
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
 }
 

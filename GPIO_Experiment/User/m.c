@@ -97,8 +97,10 @@ int main(void)
         }
         if (i == 5)
         {
+            Intr_SetPreIntrTime(0);
             HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_SET);
-            Delay( 100 );
+            Delay( 10000 );
+            Intr_SetPreIntrTime(1);
             HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_RESET);
 
             i = 10;
