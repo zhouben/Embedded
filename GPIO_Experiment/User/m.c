@@ -84,9 +84,12 @@ int main(void)
     //MyDAC_Config(1);
     // I2C EEPROM write and read experiment.
     MyI2c_EepromConfig();
+    // write an amount of data
     //MyI2c_EepromWriteSample();
-    //MyI2c_EepromReadSample();
-    MyI2c_EepromPollingReadSample();
+    // read an amount of data in interrupt mode.
+    MyI2c_EepromReadSample();
+    // read an amount of data in polling mode.
+    //MyI2c_EepromPollingReadSample();
     i = 0;
     while(1)
     {

@@ -76,6 +76,9 @@ void MyI2c_EepromWriteSample()
     MyI2c_EepromWrite(str, 9);
 }
 
+/*
+ * read an amount of data in interrupt mode.
+ */
 void MyI2c_EepromRead(uint8_t *aRxBuffer, uint16_t buff_size)
 {
     /*##-4- Put I2C peripheral in reception process ############################*/
@@ -92,18 +95,25 @@ void MyI2c_EepromRead(uint8_t *aRxBuffer, uint16_t buff_size)
     }
     while(HAL_I2C_GetError(&I2cHandle) == HAL_I2C_ERROR_AF);
 
+    // need to wait for read completed.
+    while (HAL_I2C_GetState(&I2cHandle) != HAL_I2C_STATE_READY)
+    {
+    } 
 }
 
+/*
+ * Interrupt read
+ */
 void MyI2c_EepromReadSample()
 {
     uint8_t data[2];
     uint8_t str[16] = {0};
     data[0] = 0;
     MyI2c_EepromWrite(data, 1);
-		Delay(140);
-    MyI2c_EepromRead(str, 8);
+    // wait about 10us
+    Delay(140);
+    MyI2c_EepromRead(str, 16);
 }
-
 
 /* ---------- Polling Mode -----------------*/
 
@@ -111,7 +121,7 @@ void MyI2c_EepromPollingReadSample()
 {
     uint8_t data[2];
     uint8_t str[16] = {0};
-    data[0] = 0;
+    data[0] = 8;
     //MyI2c_EepromWrite(data, 1);
 
     while(HAL_I2C_Master_Transmit(&I2cHandle, (uint16_t)I2C_ADDRESS_EEPROM, (uint8_t*)data, 1, 10000)!= HAL_OK)
