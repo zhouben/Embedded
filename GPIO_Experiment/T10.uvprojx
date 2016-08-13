@@ -412,6 +412,11 @@
               <FileType>1</FileType>
               <FilePath>.\User\dac_config.c</FilePath>
             </File>
+            <File>
+              <FileName>i2c_eeprom_wr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\i2c_eeprom_wr.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -747,7 +752,7 @@
             <v6Lto>0</v6Lto>
             <v6WtE>0</v6WtE>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--diag_suppress=550</MiscControls>
               <Define>VECT_TAB_SRAM</Define>
               <Undefine></Undefine>
               <IncludePath>./User</IncludePath>
@@ -828,6 +833,11 @@
               <FileType>1</FileType>
               <FilePath>.\User\dac_config.c</FilePath>
             </File>
+            <File>
+              <FileName>i2c_eeprom_wr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\i2c_eeprom_wr.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -894,6 +904,13 @@
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="GPIO" Cvendor="Keil" Cversion="1.5.0" condition="STM32F4 HAL">
+        <package name="STM32F4xx_DFP" schemaVersion="1.3" url="http://www.keil.com/pack" vendor="Keil" version="2.9.0"/>
+        <targetInfos>
+          <targetInfo name="Flash_Boot"/>
+          <targetInfo name="SRAM_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cclass="Device" Cgroup="STM32Cube HAL" Csub="I2C" Cvendor="Keil" Cversion="1.5.0" condition="STM32F4 HAL DMA RCC">
         <package name="STM32F4xx_DFP" schemaVersion="1.3" url="http://www.keil.com/pack" vendor="Keil" version="2.9.0"/>
         <targetInfos>
           <targetInfo name="Flash_Boot"/>

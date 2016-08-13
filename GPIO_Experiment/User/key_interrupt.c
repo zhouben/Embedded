@@ -1,7 +1,5 @@
+#include "stm32f429xx.h"
 #include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_cortex.h"
-#include "stm32f4xx_hal_gpio.h"
-#include "stm32f4xx_hal_rcc.h"
 
 /*
  * Press Key1 to increase the period of LED blink

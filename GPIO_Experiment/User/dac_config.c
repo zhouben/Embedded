@@ -78,6 +78,12 @@ void DACx_DMA_IRQHandle2(void)
     HAL_DMA_IRQHandler((ghDac1.DMA_Handle2));
 }
 
+/*
+ * GPIO: GPIO_A_4/5
+ * DMA : DMA1_Stream5
+ * Intr: DMA1_Stream5_IRQn
+ *
+ */
 void MyDAC_Config(uint32_t DMAMode)
 {
     DAC_ChannelConfTypeDef config;

@@ -6,7 +6,7 @@
 //#include "./led/bsp_led.h"
 
 #define DELAY_TIME_MIN  0x080000
-#define DELAY_TIME      0x200000	// about 150ms
+#define DELAY_TIME      0x200000    // about 150ms
 #define DELAY_TIME_MAX  0x800000
 #define DELAY_TIME_STEP 0x080000
 
@@ -14,9 +14,9 @@ static int32_t delay_time = DELAY_TIME;
 static UART_HandleTypeDef ghuart;
 
 /* for nCount = 0x20_0000, delay time is around 150ms */
-inline void Delay(__IO uint32_t nCount)	 //简单的延时函数
+void Delay(__IO uint32_t nCount)     //简单的延时函数
 {
-	for(; nCount != 0; nCount--);
+    for(; nCount != 0; nCount--);
 }
 
 #if 0
@@ -49,15 +49,15 @@ static void PowerOn(void)
  */
 void MyNVICConfigure(void)
 {
-	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
 
-	HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
-	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 1);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 2);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-	HAL_NVIC_EnableIRQ(SysTick_IRQn);
+    HAL_NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 
@@ -67,21 +67,26 @@ int main(void)
     uint32_t data[10];
     uint32_t freq = 0;
     //int usart_tx_flag = 0; // 0: tx completed, 1: has tx (not completed)
-	//char str[] = "hello world!";
-	char str[] = "hhhhhhhhhhhh";
+    //char str[] = "hello world!";
+    char str[] = "hhhhhhhhhhhh";
     MyHSE_SetSysClock();
 
     freq = HAL_RCC_GetSysClockFreq();
     assert_param(freq > 0);
     //PowerOn();
 
-	MyLed_Configure();
-	MyTimer_Configure();
+    MyLed_Configure();
+    MyTimer_Configure();
     MyKey_Config();
-	MyUart_Configure();
-	
-	MyNVICConfigure();
-	MyDAC_Config(1);
+    MyUart_Configure();
+    
+    MyNVICConfigure();
+    //MyDAC_Config(1);
+    // I2C EEPROM write and read experiment.
+    MyI2c_EepromConfig();
+    //MyI2c_EepromWriteSample();
+    //MyI2c_EepromReadSample();
+    MyI2c_EepromPollingReadSample();
     i = 0;
     while(1)
     {
@@ -89,9 +94,9 @@ int main(void)
         if (i < 10)
         {
             data[i] = HAL_GetTick();
-			i++;
+            i++;
         }
-		MyUsart_SendDataSync(str, 3);
+        MyUsart_SendDataSync((uint8_t *)str, 3);
 #if 0
         Delay( delay_time );
         HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
@@ -103,5 +108,12 @@ int main(void)
         Delay( delay_time );
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
 #endif
+    }
+}
+
+void Error_Handler(void)
+{
+    while(1)
+    {
     }
 }

@@ -22,6 +22,11 @@ void HAL_USART_MspInit(USART_HandleTypeDef *huart)
 
 }
 
+/*
+ * GPIO: GPIO_D_5/6
+ * Intr: USART2_IRQn
+ *
+ */
 void MyUart_Configure(void)
 {
 	ghUsart2.Init.BaudRate = 115200;
