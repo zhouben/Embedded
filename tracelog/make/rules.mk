@@ -17,12 +17,9 @@ OBJS += $(TEST_CFILES:%.c=$(OBJDIR)/%.o)
 CFLAGS += $(INCPATHS)
 
 define compile_c_file
-@echo $^
 @$(CC) $(CFLAGS)  -E -o $(@:%.o=%.i) $<
-@: $(CC) $(CFLAGS)  -MM -o $(@:%.o=%.d) $<
 @$(CC) $(CFLAGS)  -c -o $@ $<
 endef
-
 
 .PHONY : $(OBJLINK)
 $(OBJLINK):
@@ -33,7 +30,6 @@ $(OBJLINK):
 	@: @test -f tmp || (touch tmp && (make -n |wc -l > /dev/null ) && rm tmp)
 	@: alternative 2
 	@if [ ! -f tmp ]; then touch tmp && (make -n |wc -l > /dev/null ) ; fi
-
 
 $(EXE_FILE) : $(OBJS)
 	@echo "CC $@"
@@ -56,6 +52,14 @@ $(OBJDIR)/$(PROJECT)/%.d: %.c
 
 $(OBJDIR)/%.d: %.c
 	$(generate_dep)
+
+CONFIG = config
+.PHONY : $(CONFIG)
+$(CONFIG):
+	@$(MAKE) -n |grep "^gcc\s.*\.c$$" | grep -o "[^ ]\+\.c$$" > tmp
+	@cat tmp | sort | uniq > tmp2
+	@-rm -f tmp
+	@cat tmp2
 
 CLEAN_FILES = $(OBJDIR)
 CLEAN_FILES += $(BINDIR)

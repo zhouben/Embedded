@@ -1,4 +1,5 @@
 CC=gcc
+MAKE=make
 MKDIR = mkdir -p
 RM = rm -rf
 LN = ln -sf
