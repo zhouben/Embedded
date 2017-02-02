@@ -1,17 +1,19 @@
 BINDIR = $(TOPDIR)/bin
 OBJDIR = $(TOPDIR)/obj
+GEN_HEADER_SCRIPT = $(TOPDIR)/tools/generate_header.sh
+CFILES_TBL_HEADER = $(SRCDIR)/inc/cfiles_table.h
 OBJLINK = objlink
 EXE_FILE = $(BINDIR)/$(PROJECT)
 
 .PHONY : all
-all: $(OBJLINK) $(EXE_FILE)
+all: $(OBJLINK) $(EXE_FILE) $(CFILES_TBL_HEADER)
 pit: $(OBJLINK) $(EXE_FILE)
 	@$(EXE_FILE)
 
 OBJS = $(MODULE_CFILES:%.c=$(OBJDIR)/%.o)
 OBJS += $(LOCAL_CFILES:%.c=$(OBJDIR)/$(PROJECT)/%.o)
 OBJS += $(TEST_CFILES:%.c=$(OBJDIR)/%.o)
-
+CFILES = $(MODULE_CFILES) $(LOCAL_CFILES) $(TEST_CFILES)
 -include $(OBJS:.o=.d)
 
 CFLAGS += $(INCPATHS)
@@ -55,11 +57,13 @@ $(OBJDIR)/%.d: %.c
 
 CONFIG = config
 .PHONY : $(CONFIG)
-$(CONFIG):
-	@$(MAKE) -n |grep "^gcc\s.*\.c$$" | grep -o "[^ ]\+\.c$$" > tmp
-	@cat tmp | sort | uniq > tmp2
-	@-rm -f tmp
-	@cat tmp2
+$(CONFIG): $(CFILES_TBL_HEADER)
+	@true
+
+
+$(CFILES_TBL_HEADER): $(CFILES)
+	@echo generate $(CFILES_TBL_HEADER) depends on $^
+	@echo $^|sed 's/ /\n/g' |sort|uniq|sh $(GEN_HEADER_SCRIPT) > $@
 
 CLEAN_FILES = $(OBJDIR)
 CLEAN_FILES += $(BINDIR)
