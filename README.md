@@ -6,3 +6,4 @@
     1. write instructions (hex string) by pyserial 
     1. read hex string with PM2.5/10 value
     1. press ctrl+c to close serial port and exit.
+1. Add kobject experiment for arm linux on zlg283
