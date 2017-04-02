@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Make rootfs for QEMU
+#
+# Prerequisition:
+# 1. rootfs directory, includes all exetable files for QEMU
+# 2. a9rootfs.ext3, a EXT3 format file as disk image
+# 3. tmpfs, an empty directory as mount point for a9rootfs.ext3
+#
+# Operations:
+# 1. mount a9rootfs.ext3 to tmpfs
+# 2. copy all files from rootfs to tmpfs
+# 3. un-mount a9rootfs.ext3 so that the tmpfs updated by rootfs will be packed into a9rootfs.ext3
+#
+
+set -xe
+[ -d rootfs ] || ( echo need rootfs! && exit 1 )
+[ -f a9rootfs.ext3 ] || ( echo "to create a9rootfs.ext3" && dd if=/dev/zero of=a9rootfs.ext3 bs=1M count=32 && mkfs -t ext3 a9rootfs.ext3 )
+[ -d tmpfs ] || ( echo to create tmpfs && mkdir tmpfs )
+sudo mount -t ext3 a9rootfs.ext3 tmpfs/ -o loop
+sudo cp -r rootfs/* tmpfs/
+sudo umount tmpfs
+echo complete!

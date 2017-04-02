@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# Start qemu-system-arm for the specific linux zImage and disk image a9rootfs.ext3
+#
+# There're two modes, debug and normal. The former will wait until gdb connects the virtual machine.
+#
+# If running this script with any extra argument, initiate debug mode
+# otherwise normal mode
+if [ $# -gt 0 ]; then
+# debug mode, needs gdb to connect and continue.
+    qemu-system-arm -s -S -M vexpress-a9 -m 512M -kernel /opt/work/linux-3.16/arch/arm/boot/zImage -nographic -append "root=/dev/mmcblk0 rw console=ttyAMA0" -sd a9rootfs.ext3
+else
+# normal mode
+    qemu-system-arm  -M vexpress-a9 -m 512M -kernel /opt/work/linux-3.16/arch/arm/boot/zImage -nographic -append "root=/dev/mmcblk0 rw console=ttyAMA0" -sd a9rootfs.ext3
+fi

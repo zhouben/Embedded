@@ -1,0 +1,6 @@
+target remote localhost:1234
+file /opt/work/linux-3.16/vmlinux
+set print pretty on
+b simple_drv_read
+b simple_drv_write
+c
