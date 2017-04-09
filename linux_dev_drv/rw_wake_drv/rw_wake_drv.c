@@ -17,14 +17,15 @@
 #include <linux/gpio.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
+#include <linux/mutex.h>
 
-#include <../arch/arm/mach-mx28/mx28_pins.h>
-
-#define DEVICE_NAME	"imx28x_led"
+#define DEVICE_NAME	"rw_wake"
+#define BUFFER_SIZ 32
+unsigned char data[BUFFER_SIZ] = {0};
 
 struct led_ext
 {
-    struct semaphore sem;
+    struct mutex sem;
     wait_queue_head_t inq;
     int data_ready_flag;
     struct miscdevice gpio_miscdev;
@@ -34,10 +35,9 @@ struct led_ext
 */
 static int gpio_open(struct inode *inode, struct file *filp);
 static int  gpio_release(struct inode *inode, struct file *filp);
-ssize_t gpio_read(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos);
-ssize_t gpio_write(struct file *filp, const char __user *buf, size_t count,
-                loff_t *f_pos);
-static int gpio_ioctl(struct inode *inode,struct file *flip,unsigned int command,unsigned long arg);
+ssize_t gpio_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
+ssize_t gpio_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos);
+//int gpio_ioctl(struct inode *inode, struct file *flip, unsigned int command, unsigned long arg);
 static int gpio_init(void);
 static void gpio_exit(void);
 
@@ -47,7 +47,7 @@ static struct file_operations gpio_fops={
 	.write		= gpio_write,
     .read       = gpio_read,
 	.release	= gpio_release,
-	.ioctl		= gpio_ioctl,
+	//.ioctl		= gpio_ioctl,
 };
 
 struct led_ext my_led = {
@@ -71,49 +71,105 @@ static int  gpio_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-ssize_t gpio_read(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+static int data_ready(void)
 {
+    if (my_led.data_ready_flag == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+ssize_t gpio_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+    int siz;
     printk("gpio_read up\n");
-    if (down_interruptible(&my_led.sem))
+    printk("data_ready_flag %d, not ready, need to wait...\n", my_led.data_ready_flag);
+
+    if (count == 0)
+        return 0;
+
+    if (*f_pos >= BUFFER_SIZ)
+        return -EINVAL;
+    if (*f_pos + count > BUFFER_SIZ)
+    {
+        siz = BUFFER_SIZ - *f_pos;
+    }
+    else
+    {
+        siz = count;
+    }
+
+    if (mutex_lock_interruptible(&my_led.sem))
         return -ERESTARTSYS;
 
     while (my_led.data_ready_flag == 0)
     {
-        up(&my_led.sem);
-        printk("data_ready_flag %d, not ready, need to wait...\n", my_led.data_ready_flag);
-        if (wait_event_interruptible(my_led.inq, (my_led.data_ready_flag > 0)))
+        mutex_unlock(&my_led.sem);
+
+        if (wait_event_interruptible(my_led.inq, (data_ready() > 0)))
             return -ERESTARTSYS;
-        if (down_interruptible(&my_led.sem))
+        if (mutex_lock_interruptible(&my_led.sem))
             return -ERESTARTSYS;
     }
     printk("data_ready_flag %d, ready to read\n", my_led.data_ready_flag);
+
     my_led.data_ready_flag--;
-    up (&my_led.sem);
-    return count;
+    mutex_unlock (&my_led.sem);
+    if (0 != copy_to_user((void *)buf, data + *f_pos, siz))
+    {
+        return -EFAULT;
+    }
+    *f_pos += siz;
+
+    return siz;
 }
 
 ssize_t gpio_write(struct file *filp, const char __user *buf, size_t count,
                 loff_t *f_pos)
 {
-	char data[2];
+    int rc;
+    int siz;
     printk("gpio_write up\n");
     if (count == 0)
         return 0;
 
-    if (down_interruptible(&my_led.sem))
+    if (*f_pos >= BUFFER_SIZ)
+        return -EINVAL;
+    if (*f_pos + count > BUFFER_SIZ)
+    {
+        siz = BUFFER_SIZ - *f_pos;
+    }
+    else
+    {
+        siz = count;
+    }
+
+    if (mutex_lock_interruptible(&my_led.sem))
         return -ERESTARTSYS;
     my_led.data_ready_flag++;
-    up(&my_led.sem);
-    wake_up_interruptible(&my_led.inq);
+    mutex_unlock(&my_led.sem);
 
-	printk("[input] write buf %08X, [stack] data %08X\n", (unsigned int)buf, (unsigned int)data);
+    rc = copy_from_user(data + *f_pos, buf, siz);
+
     printk("write: f_flags: %08X\n", filp->f_flags);
 
-	copy_from_user(data, buf, 1);
-
-	return 1;
+	if (0 == rc)
+    {
+        *f_pos += siz;
+        wake_up_interruptible(&my_led.inq);
+        return siz;
+    }
+    else
+    {
+        return -EFAULT;
+    }
 }
 
+#if 0
 static int gpio_ioctl(struct inode *inode,struct file *flip,unsigned int command,unsigned long arg)
 {
 	switch (command) {
@@ -128,17 +184,15 @@ static int gpio_ioctl(struct inode *inode,struct file *flip,unsigned int command
 
 	return 0;
 }
+#endif
 
 static int __init gpio_init(void)
 {
 	misc_register(&my_led.gpio_miscdev);
     init_waitqueue_head(&(my_led.inq));
-    init_MUTEX(&(my_led.sem));
+    mutex_init(&(my_led.sem));
 	printk(DEVICE_NAME" up. \n"); 
     printk("kobject->name        %s\n", my_led.gpio_miscdev.this_device->kobj.name);
-    //printk("parent kobject->name %s\n", my_led.gpio_miscdev.parent->kobj.name);
-	printk("Function gpio_init  %08X\n", (unsigned int)gpio_init);
-	printk("Function gpio_write %08X\n", (unsigned int)gpio_write);
 
 	return 0;
 }

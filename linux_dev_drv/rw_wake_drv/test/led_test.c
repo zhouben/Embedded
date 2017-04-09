@@ -17,23 +17,16 @@ int main(void)
 {
 	int fd;
 
-	fd = open("/dev/imx28x_led", O_RDWR | O_NONBLOCK);
+	fd = open("/dev/rw_wake", O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
-		perror("open /dev/imx283_led");
+		perror("open /dev/rw_wake");
 	}
 
-	printf("test write.... buf %08X\n", (unsigned int)buf);
-	buf[0] = 0;
-
-	write(fd, buf, 1);
-	sleep(2);
-
-	buf[0] = 1;
-	write(fd, buf, 1);
-	sleep(1);	
-
-	printf("test ioctl..... \n");
-	ioctl(fd, 0);
-	sleep(2);
-	ioctl(fd, 1);
+    printf("try to read ...\n");
+    sleep(1);
+    read(fd, buf, 1);
+    printf("read complete! sleep and then exit\n");
+    sleep(1);
+    close(fd);
+    return 0;
 }

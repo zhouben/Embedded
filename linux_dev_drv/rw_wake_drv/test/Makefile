@@ -1,4 +1,4 @@
-CROSS	= arm-fsl-linux-gnueabi-
+CROSS	= arm-linux-gnueabi-
 CC	     = $(CROSS)gcc 
 STRIP	= $(CROSS)strip
 CFLAGS	= -Wall -g -O0 -ggdb
@@ -14,6 +14,7 @@ OBJS    = $(CFILES:%.c=$(OBJDIR)/%.o)
 
 all:  clean pre_build $(BINDIR)/$(EXEC) $(BINDIR)/$(RD_EXEC) $(BINDIR)/$(WR_EXEC)
 	cp $(BINDIR)/* $(NFSROOT)
+	sudo cp $(BINDIR)/* $(ROOTFS_TMP)
 
 $(OBJDIR)/%.o : %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

@@ -1,11 +1,9 @@
-obj-m:=led.o
-APPDIR = test
+obj-y:=rw_wake_drv.o
 PWD:=$(shell pwd)
 KDIR:=$(KERNEL_PATH)
+EXTRA_CFLAGS=-O0 -g -ggdb
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD) 
-	$(MAKE) -C $(APPDIR)
-	cp *.ko $(NFSROOT)
 clean:
 	$(MAKE) -C $(APPDIR) clean
 	rm -rf *.ko *.order *.symvers *.cmd *.o *.mod.c *.tmp_versions .*.cmd .tmp_versions
