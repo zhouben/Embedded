@@ -14,8 +14,12 @@ int main(int argc,char *argv[])
     QWidget *window = new QWidget;
 
     window->setWindowTitle("转发器");
+    QLineEdit  *edt = new QLineEdit;
+    edt->setMaxLength(100);
+
     QLCDNumber *lcd = new QLCDNumber;
     QSlider *slider = new QSlider(Qt::Horizontal);
+
     slider->setRange(0,99);
     QObject::connect(slider, SIGNAL(valueChanged(int)), lcd, SLOT(display(int)));
     slider->setValue(35);
@@ -25,6 +29,7 @@ int main(int argc,char *argv[])
 	QLabel	label(infoString);
 
     QHBoxLayout *layout = new QHBoxLayout;
+    layout->addWidget(edt);
     layout->addWidget(lcd);
     layout->addWidget(slider);
 
