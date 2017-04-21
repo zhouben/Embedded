@@ -1,43 +1,23 @@
 #include <QApplication>
 #include <QTextCodec>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSlider>
 #include <QLCDNumber>
 #include <QtGui>
+
+#include "mainwnd.h"
 int main(int argc,char *argv[])
 {
 	QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 	QApplication	app(argc,argv);
 
-    QWidget *window = new QWidget;
+    //QWidget *window = new QWidget();
+    MainWnd *window = new MainWnd();
 
     window->setWindowTitle("转发器");
-    QLineEdit  *edt = new QLineEdit;
-    edt->setMaxLength(100);
-
-    QLCDNumber *lcd = new QLCDNumber;
-    QSlider *slider = new QSlider(Qt::Horizontal);
-
-    slider->setRange(0,99);
-    QObject::connect(slider, SIGNAL(valueChanged(int)), lcd, SLOT(display(int)));
-    slider->setValue(35);
-
-	const char *info = "you should see some chinese words: 你好，世界!";
-	QString infoString = info;
-	QLabel	label(infoString);
-
-    QHBoxLayout *layout = new QHBoxLayout;
-    layout->addWidget(edt);
-    layout->addWidget(lcd);
-    layout->addWidget(slider);
-
-    QVBoxLayout *vlayout = new QVBoxLayout;
-    vlayout->addWidget(&label);
-    vlayout->addItem(layout);
-
-    window->setLayout(vlayout);
     window->show();
 
 	//QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));

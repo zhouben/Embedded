@@ -1,4 +1,6 @@
 //#include <Qt/qglobal.h>
+#ifndef _WORK_THREAD_H_
+#define _WORK_THREAD_H_
 #include <Qt/qdebug.h>
 #include <Qt/qthread.h>
 
@@ -30,3 +32,4 @@ protected:
 signals:
     void resultReady(int value);
 };
+#endif

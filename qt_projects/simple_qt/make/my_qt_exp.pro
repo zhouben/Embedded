@@ -14,4 +14,5 @@ CONFIG += qt warn_on debug release
 VPATH += ../src
 
 # Input
-SOURCES += main.cpp work_thread.cpp
+HEADERS += mainwnd.h work_thread.h
+SOURCES += main.cpp mainwnd.cpp
