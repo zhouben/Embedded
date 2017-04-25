@@ -27,4 +27,5 @@ int main(void)
     write(fd, buf, BUF_SIZE); 
     printf("\t\tcomplete!\n");
     close(fd);
+    return 0;
 }

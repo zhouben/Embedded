@@ -2,6 +2,7 @@ CROSS	= arm-linux-gnueabi-
 CC	     = $(CROSS)gcc 
 STRIP	= $(CROSS)strip
 CFLAGS	= -Wall -g -O0 -ggdb
+LDFLAGS = -lrt -lpthread
 
 EXEC	= led_test
 RD_EXEC = read_led
@@ -24,7 +25,7 @@ $(BINDIR)/$(EXEC) :$(EXEC:%=$(OBJDIR)/%.o)
 	#$(STRIP) $@
 
 $(BINDIR)/$(RD_EXEC) :$(RD_EXEC:%=$(OBJDIR)/%.o)
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 $(BINDIR)/$(WR_EXEC) :$(WR_EXEC:%=$(OBJDIR)/%.o)
 	$(CC) $(CFLAGS) -o $@ $<
